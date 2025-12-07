@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Find My Phone - Demo</title>
+  <title>Find My Phone (Demo)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-
   <style>
     * {
       margin: 0;
@@ -268,34 +266,66 @@
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+  // তোমার Replit API লিংক
+  const API_BASE = "https://find-my-phone-demo--Shakilhasan2218.replit.app";
+
   const loginForm = document.getElementById("login-form");
   const loginCard = document.getElementById("login-card");
   const dashboard = document.getElementById("dashboard");
   const headerUser = document.getElementById("header-user");
+  const lastSeenEl = document.getElementById("last-seen");
+  const locTextEl = document.getElementById("location-text");
+  const deviceNameEl = document.getElementById("device-name");
 
   let map;
 
-  loginForm.addEventListener("submit", function (e) {
+  loginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
 
     const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value; // এখন শুধু দেখানোর জন্য
 
-    // সহজ demo: কেবল স্ক্রিন চেঞ্জ + ম্যাপ শো
-    loginCard.style.display = "none";
-    dashboard.style.display = "block";
-    headerUser.textContent = email;
+    headerUser.textContent = email || "Demo user";
 
-    // ম্যাপ initialize (একবারই)
-    if (!map) {
-      initMap();
+    try {
+      // ১) ডিভাইস লিস্ট আনো
+      const dRes = await fetch(API_BASE + "/api/devices");
+      const devices = await dRes.json();
+      if (!devices.length) {
+        alert("API থেকে কোনো ডিভাইস পাওয়া যায়নি");
+        return;
+      }
+      const device = devices[0];
+      deviceNameEl.textContent = device.name;
+
+      // ২) শেষ লোকেশন আনো
+      const lRes = await fetch(API_BASE + "/api/devices/" + device.id + "/last");
+      if (!lRes.ok) {
+        alert("API থেকে লোকেশন পাওয়া যায়নি");
+        return;
+      }
+      const loc = await lRes.json();
+
+      // UI আপডেট
+      loginCard.style.display = "none";
+      dashboard.style.display = "block";
+
+      lastSeenEl.textContent = loc.time || "Unknown";
+      locTextEl.textContent = loc.locationText || "Unknown";
+
+      // ম্যাপ সেট
+      if (!map) {
+        initMap(loc.lat, loc.lng);
+      } else {
+        map.setView([loc.lat, loc.lng], 13);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("API কল করতে সমস্যা হয়েছে");
     }
   });
 
-  function initMap() {
-    // Dhaka approximate coordinates
-    const lat = 23.777176;
-    const lng = 90.399452;
-
+  function initMap(lat, lng) {
     map = L.map("map").setView([lat, lng], 13);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -304,7 +334,9 @@
     }).addTo(map);
 
     const marker = L.marker([lat, lng]).addTo(map);
-    marker.bindPopup("<b>Last known location</b><br>Demo phone in Dhaka.").openPopup();
+    marker
+      .bindPopup("<b>Last known location</b><br>Demo phone from API.")
+      .openPopup();
   }
 </script>
 </body>
