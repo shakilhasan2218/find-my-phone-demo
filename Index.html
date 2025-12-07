@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find My Phone - Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
+
+    body {
+      background: #f5f5f5;
+      color: #202124;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #1a73e8;
+    }
+
+    .header-right {
+      font-size: 14px;
+    }
+
+    .header-right span {
+      opacity: 0.7;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 420px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      padding: 24px 20px 20px;
+    }
+
+    .card-title {
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: #5f6368;
+      margin-bottom: 18px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 6px;
+      border: 1px solid #dadce0;
+      font-size: 14px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: none;
+      background: #1a73e8;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .primary-btn:active {
+      transform: scale(0.99);
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #5f6368;
+    }
+
+    /* Dashboard (map screen) */
+    #dashboard {
+      display: none;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .dash-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .dash-title {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .small-text {
+      font-size: 12px;
+      color: #5f6368;
+    }
+
+    #map {
+      width: 100%;
+      height: 420px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #dadce0;
+    }
+
+    .info-row {
+      margin-top: 10px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+
+    footer {
+      padding: 10px 16px;
+      font-size: 11px;
+      color: #5f6368;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span>Find My Phone (Demo)</span>
+  </div>
+  <div class="header-right">
+    <span id="header-user">Not signed in</span>
+  </div>
+</header>
+
+<main>
+  <!-- Login Card -->
+  <div id="login-card" class="card">
+    <h1 class="card-title">Sign in to track your phone</h1>
+    <p class="card-subtitle">
+      Demo প্রজেক্ট: এখানে দেওয়া লোকেশন আসল না, শুধু দেখানোর জন্য।
+    </p>
+
+    <form id="login-form">
+      <div class="field">
+        <label>Email (Gmail)</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="example@gmail.com"
+          required
+        />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter any demo password"
+          required
+        />
+      </div>
+      <button type="submit" class="primary-btn">Sign in</button>
+    </form>
+
+    <p class="hint">
+      ভবিষ্যতে এখানেই আসল লগইন / OTP / Google Sign-in ইত্যাদি লাগানো যাবে।
+    </p>
+  </div>
+
+  <!-- Dashboard with Map -->
+  <div id="dashboard">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">My Phone Location</div>
+        <div class="small-text">
+          Device: <span id="device-name">Android Demo Device</span>
+        </div>
+      </div>
+      <div>
+        <span class="badge">Demo mode</span>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="info-row">
+      <div>
+        Last seen: <span id="last-seen">Just now (demo)</span>
+      </div>
+      <div>
+        Location: <span id="location-text">Dhaka, Bangladesh (approx)</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  © 2025 Shakil Find My Phone · Demo only · Not real tracking
+</footer>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const loginForm = document.getElementById("login-form");
+  const loginCard = document.getElementById("login-card");
+  const dashboard = document.getElementById("dashboard");
+  const headerUser = document.getElementById("header-user");
+
+  let map;
+
+  loginForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+
+    // সহজ demo: কেবল স্ক্রিন চেঞ্জ + ম্যাপ শো
+    loginCard.style.display = "none";
+    dashboard.style.display = "block";
+    headerUser.textContent = email;
+
+    // ম্যাপ initialize (একবারই)
+    if (!map) {
+      initMap();
+    }
+  });
+
+  function initMap() {
+    // Dhaka approximate coordinates
+    const lat = 23.777176;
+    const lng = 90.399452;
+
+    map = L.map("map").setView([lat, lng], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "© OpenStreetMap contributors",
+    }).addTo(map);
+
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup("<b>Last known location</b><br>Demo phone in Dhaka.").openPopup();
+  }
+</script>
+</body>
+</html>
